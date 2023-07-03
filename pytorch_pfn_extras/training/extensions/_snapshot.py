@@ -368,28 +368,34 @@ class _Snapshot(extension.Extension):
             # terms of mtime, and tries to load it it the target or
             # manager.
             assert writer is not None
-            loaded_fn = _find_latest_snapshot(
-                self.filename, writer.out_dir, writer.fs
-            )
-            if loaded_fn:
-                snapshot_file = writer.fs.open(
-                    os.path.join(writer.out_dir, loaded_fn), "rb"
-                )
-                # As described above (at ``autoload`` option),
-                # snapshot files to be autoloaded must be saved by
-                # ``save_npz`` . In order to support general format,
-                # we nned to first reconstruct the design of savefun
-                # and loadfun.
-                state = torch.load(
-                    snapshot_file,  # type: ignore[no-untyped-call]
-                    map_location=torch.device("cpu"),
-                )
-                if type(target) is dict:
-                    for k in target:
-                        target[k].load_state_dict(state[k])
-                else:
-                    target.load_state_dict(state)
-                snapshot_file.close()
+            loaded_fn = None
+            all_snapshots = _find_snapshot_files(self.filename, writer.out_dir, writer.fs)
+            for _, candidate_snapshot_fn in all_snapshots[::-1]:
+                try:
+                    snapshot_file = writer.fs.open(
+                        os.path.join(writer.out_dir, candidate_snapshot_fn), "rb"
+                    )
+                    # As described above (at ``autoload`` option),
+                    # snapshot files to be autoloaded must be saved by
+                    # ``save_npz`` . In order to support general format,
+                    # we nned to first reconstruct the design of savefun
+                    # and loadfun.
+                    state = torch.load(
+                        snapshot_file,  # type: ignore[no-untyped-call]
+                        map_location=torch.device("cpu"),
+                    )
+                    if type(target) is dict:
+                        for k in target:
+                            target[k].load_state_dict(state[k])
+                    else:
+                        target.load_state_dict(state)
+                    snapshot_file.close()
+                    loaded_fn = candidate_snapshot_fn
+                except Exception as e:
+                    logger.info(
+                        "Failed to load snapshot {}, with the following error, skipping.".format(
+                        candidate_snapshot_fn))
+                    logger.info(e)
 
         if (
             hasattr(writer, "_add_cleanup_hook")
