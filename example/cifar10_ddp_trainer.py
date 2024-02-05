@@ -2,6 +2,7 @@ import argparse
 import multiprocessing
 import tempfile
 from typing import Any, Dict
+import os
 
 import pytorch_pfn_extras as ppe
 import pytorch_pfn_extras.training.extensions as ext
@@ -130,7 +131,12 @@ def main():
         help="Use mixed precision (FP16) for training to improve computation speed and reduce memory usage.",
     )
     args = parser.parse_args()
-
+    if os.environ.get("WORLD_SIZE") is not None:
+        os.environ["OMPI_COMM_WORLD_SIZE"] = os.environ["WORLD_SIZE"]
+    if os.environ.get("RANK") is not None:
+        os.environ["OMPI_COMM_WORLD_RANK"] = os.environ["RANK"]
+    if os.environ.get("LOCAL_RANK") is not None:
+        os.environ["OMPI_COMM_WORLD_LOCAL_RANK"] = os.environ["LOCAL_RANK"]
     (
         world_size,
         world_rank,
