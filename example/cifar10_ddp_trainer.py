@@ -136,8 +136,9 @@ def main():
         world_rank,
         local_rank,
     ) = ppe.distributed.initialize_ompi_environment(
-        backend="nccl", init_method="tcp"
+        backend="nccl", init_method="env"
     )
+    print(f"{world_size=}, {world_rank=}, {local_rank=}")
     torch.cuda.set_device(torch.device("cuda:{}".format(local_rank)))
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
