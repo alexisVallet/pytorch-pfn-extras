@@ -184,7 +184,7 @@ def main():
         sampler=val_sampler,
     )
 
-    model = resnet50(num_classes=10)
+    model = resnet50(num_classes=10).to(torch.bfloat16)
     if args.use_mnbn:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
 
