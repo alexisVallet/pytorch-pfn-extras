@@ -39,7 +39,7 @@ class TrainerModel(nn.Module):
     def forward(
         self, x: torch.Tensor, y: torch.Tensor
     ) -> Dict[str, torch.Tensor]:
-        out = self.model.forward(x.to(torch.float16))
+        out = self.model.forward(x)
         loss = self.criterion.forward(out, y)
         ppe.reporting.report({"train/loss": loss.item()})
         return {"loss": loss}
@@ -52,7 +52,7 @@ class EvaluatorModel(nn.Module):
         self.criterion = nn.CrossEntropyLoss()
 
     def forward(self, x: torch.Tensor, y: torch.Tensor) -> None:
-        out = self.model.forward(x.to(torch.float16))
+        out = self.model.forward(x)
         loss = self.criterion.forward(out, y)
         acc = (out.argmax(axis=1) == y).sum() / len(y)
         ppe.reporting.report(
