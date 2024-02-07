@@ -188,7 +188,7 @@ def main():
 
     for name, param in model.named_parameters():
         def hook(grad):
-            print(f"{rank=} {name}: {grad.dtype=} {grad.shape=} {param.dtype=} {param.shape=}")
+            print(f"{world_rank=} {name}: {grad.dtype=} {grad.shape=} {param.dtype=} {param.shape=}")
 
             return grad
         param.register_hook(hook)
