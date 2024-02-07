@@ -186,12 +186,13 @@ def main():
 
     model = resnet50(num_classes=10).to(torch.bfloat16)
 
-    for name, param in model.named_parameters():
-        def hook(grad):
-            print(f"{world_rank=} {name}: {grad.dtype=} {grad.shape=} {param.dtype=} {param.shape=}")
+    old_all_reduce = torch.distributed.all_reduce
 
-            return grad
-        param.register_hook(hook)
+    def all_reduce_wrapper(tensor, *args, **kwargs):
+        print(f"{world_rank=}: {tensor.shape=} {tensor.dtype=}")
+        return old_all_reduce(tensor, *args, **kwargs)
+    
+    torch.distributed.all_reduce = all_reduce_wrapper
 
     if args.use_mnbn:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
