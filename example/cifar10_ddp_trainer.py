@@ -39,7 +39,7 @@ class TrainerModel(nn.Module):
     def forward(
         self, x: torch.Tensor, y: torch.Tensor
     ) -> Dict[str, torch.Tensor]:
-        out = self.model.forward(x.to(torch.bfloat16))
+        out = self.model.forward(x.to(torch.float16))
         loss = self.criterion.forward(out, y)
         ppe.reporting.report({"train/loss": loss.item()})
         return {"loss": loss}
@@ -52,7 +52,7 @@ class EvaluatorModel(nn.Module):
         self.criterion = nn.CrossEntropyLoss()
 
     def forward(self, x: torch.Tensor, y: torch.Tensor) -> None:
-        out = self.model.forward(x.to(torch.bfloat16))
+        out = self.model.forward(x.to(torch.float16))
         loss = self.criterion.forward(out, y)
         acc = (out.argmax(axis=1) == y).sum() / len(y)
         ppe.reporting.report(
@@ -184,7 +184,7 @@ def main():
         sampler=val_sampler,
     )
 
-    model = resnet50(num_classes=10).to(torch.bfloat16)
+    model = resnet50(num_classes=10)
 
     old_all_reduce = torch.distributed.all_reduce
 
@@ -201,7 +201,6 @@ def main():
     evaluator_model = EvaluatorModel(model=model)
     distributed_trainer_model = ppe.nn.parallel.DistributedDataParallel(
         ppe.to(trainer_model, device),
-        bucket_cap_mb=10
     )
 
     optimizer = torch.optim.Adam(
