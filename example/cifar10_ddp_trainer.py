@@ -200,7 +200,8 @@ def main():
     trainer_model = TrainerModel(model=model)
     evaluator_model = EvaluatorModel(model=model)
     distributed_trainer_model = ppe.nn.parallel.DistributedDataParallel(
-        ppe.to(trainer_model, device)
+        ppe.to(trainer_model, device),
+        bucket_cap_mb=10
     )
 
     optimizer = torch.optim.Adam(
